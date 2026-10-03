@@ -1,0 +1,9 @@
+INTERNAL DEMO FILE
+==================
+This file simulates an internal document that should not be accessible
+through path traversal attacks.
+
+If you can read this through the vulnerable download endpoint,
+it demonstrates VULN-007: Path Traversal.
+
+DEMO_SECRET: this_is_a_demo_internal_secret

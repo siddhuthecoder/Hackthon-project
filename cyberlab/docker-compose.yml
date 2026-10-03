@@ -1,0 +1,104 @@
+services:
+  mongodb:
+    image: mongo:7
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - sentinelforge
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sentinelforge
+
+  api:
+    build: ./server
+    ports:
+      - "3001:3001"
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/sentinelforge
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=demo_jwt_secret_not_for_production
+      - JWT_REFRESH_SECRET=demo_refresh_secret_not_for_production
+      - INTERNAL_SERVICE_URL=http://internal-service:8080
+      - DEMO_FILES_DIR=/app/demo-files
+      - NODE_ENV=development
+    volumes:
+      - ./demo-files:/app/demo-files
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - sentinelforge
+
+  worker:
+    build: ./server
+    command: ["node", "dist/worker.js"]
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/sentinelforge
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=demo_jwt_secret_not_for_production
+      - JWT_REFRESH_SECRET=demo_refresh_secret_not_for_production
+      - NODE_ENV=development
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - sentinelforge
+
+  internal-service:
+    build: ./internal-service
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sentinelforge
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - API_INTERNAL_URL=http://api:3001
+    depends_on:
+      - api
+    networks:
+      - sentinelforge
+
+  nginx:
+    build: ./nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - frontend
+      - api
+    networks:
+      - sentinelforge
+
+volumes:
+  mongodb_data:
+
+networks:
+  sentinelforge:
+    driver: bridge
