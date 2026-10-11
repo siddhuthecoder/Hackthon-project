@@ -1,0 +1,23 @@
+rules:
+  - id: cyberlab-ssrf-raw-body-url-to-axios
+    languages: [typescript, javascript]
+    severity: ERROR
+    message: >
+      `url` destructured directly from req.body reaches axios.get() as the outbound request
+      target. If there is no allowlist check between the two, this is a Server-Side Request
+      Forgery (CWE-918): an authenticated caller can make the server issue requests to internal
+      hosts (metadata endpoints, internal services) that should not be reachable from outside.
+    patterns:
+      - pattern-inside: |
+          async function $FUNC(...) {
+            const { url } = req.body;
+            ...
+          }
+      - pattern: axios.get($URL, ...)
+      - metavariable-pattern:
+          metavariable: $URL
+          pattern: url
+    metadata:
+      cwe: CWE-918
+      owasp: API10:2023
+      vulnKey: VULN-006

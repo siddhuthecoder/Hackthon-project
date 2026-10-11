@@ -1,0 +1,17 @@
+# Root-level safety net — subpackages have their own .gitignore too, but this catches anything
+# nested at a depth their patterns don't reach (e.g. cyberlab/server/node_modules).
+node_modules/
+dist/
+.next/
+build/
+*.log
+*.tsbuildinfo
+
+# Secrets — real API keys/tokens live only in these, never committed.
+.env
+.env.*
+!.env.example
+
+.DS_Store
+.playwright-mcp/
+chat.txt

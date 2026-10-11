@@ -18,6 +18,8 @@ import customerRoutes from './routes/customers';
 import commentRoutes from './routes/comments';
 import notificationRoutes from './routes/notifications';
 import vulnerableRoutes from './routes/vulnerable';
+import canaryRoutes from './routes/canary';
+import { labFixMiddleware, labRouter } from './services/labFix';
 
 const app = express();
 
@@ -25,6 +27,8 @@ app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(requestTracker);
+app.use('/api/lab', labRouter);
+app.use(labFixMiddleware);
 
 app.get('/health', (_req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 app.get('/api/health', (_req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
@@ -45,6 +49,7 @@ app.use('/api/security', securityRoutes);
 app.use('/api/files', filesRouter);
 app.use('/api/fetch-url', fetchUrlRouter);
 app.use('/api/tools', toolsRouter);
+app.use('/api', canaryRoutes);
 
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   if (err.message.startsWith('File type') || err.message.startsWith('LAB_SAFETY_GUARD') || err.name === 'MulterError') {

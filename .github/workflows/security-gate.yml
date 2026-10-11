@@ -1,0 +1,79 @@
+name: Security Gate
+
+# Scoped to SentinelForge's own source (sentinelforge/) — not cyberlab/, which is a deliberately
+# vulnerable training fixture that would always fail a "no criticals" gate by design. This is the
+# CI/CD gate from the hackathon plan: a PR that introduces a new secret, a critical/high-severity
+# known-vulnerable dependency, or breaks the existing test suite is blocked.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  secrets-scan:
+    name: Gitleaks — new secrets in this change
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Scan only the commits introduced by this change
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITLEAKS_CONFIG: sentinelforge/backend/gitleaks.toml
+        # gitleaks-action auto-detects PR vs push and scans only the new commit range —
+        # pre-existing fixture data in cyberlab/ committed before this gate existed is not
+        # re-flagged on every unrelated PR, only genuinely new secrets are.
+
+  dependency-scan:
+    name: OSV-Scanner — SentinelForge's own real dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan backend dependencies
+        uses: google/osv-scanner-action/osv-scanner-action@v1
+        with:
+          scan-args: |-
+            --lockfile=sentinelforge/backend/package-lock.json
+            --fail-on-vuln=true
+        continue-on-error: false
+      - name: Scan frontend dependencies
+        uses: google/osv-scanner-action/osv-scanner-action@v1
+        with:
+          scan-args: |-
+            --lockfile=sentinelforge/frontend/package-lock.json
+            --fail-on-vuln=true
+        continue-on-error: false
+
+  backend-quality-gate:
+    name: Backend — typecheck + real unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: sentinelforge/backend/package-lock.json
+      - run: npm ci
+        working-directory: sentinelforge/backend
+      - run: npm run typecheck
+        working-directory: sentinelforge/backend
+      - run: npm test
+        working-directory: sentinelforge/backend
+
+  frontend-typecheck:
+    name: Frontend — typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: sentinelforge/frontend/package-lock.json
+      - run: npm ci
+        working-directory: sentinelforge/frontend
+      - run: npx tsc --noEmit
+        working-directory: sentinelforge/frontend

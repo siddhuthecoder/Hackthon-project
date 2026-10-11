@@ -1,0 +1,13 @@
+title = "SentinelForge custom gitleaks rules"
+
+# Gitleaks' default ruleset targets recognizable provider key formats (AWS, GitHub, Stripe, ...).
+# It does not flag a generic "KEY=value" / "PASSWORD=value" assignment with no distinctive shape
+# — exactly VULN-014's case (cyberlab/config/demo.env). This is a known, normal gitleaks
+# limitation; teams with their own naming conventions write a custom rule for it, which is what
+# this is. Verified against both the vulnerable file (6 real findings) and the redacted file
+# (0 real findings, after the ROTATED_BY_SENTINELFORGE marker filter applied in gitleaks.ts).
+[[rules]]
+id = "generic-env-credential"
+description = "Generic credential-shaped assignment in a committed env/config file (KEY/SECRET/PASSWORD/TOKEN=value)"
+regex = '''(?i)[A-Z_]*(SECRET|PASSWORD|KEY|TOKEN)[A-Z_]*\s*=\s*[^\s#][^\n]{3,}'''
+tags = ["credential", "env-file"]

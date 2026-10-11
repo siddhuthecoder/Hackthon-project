@@ -32,9 +32,12 @@ services:
       - JWT_REFRESH_SECRET=demo_refresh_secret_not_for_production
       - INTERNAL_SERVICE_URL=http://internal-service:8080
       - DEMO_FILES_DIR=/app/demo-files
+      - CONFIG_DIR=/app/config
+      - LAB_CONTROL_KEY=${LAB_CONTROL_KEY:?set LAB_CONTROL_KEY in cyberlab/.env}
       - NODE_ENV=development
     volumes:
       - ./demo-files:/app/demo-files
+      - ./config:/app/config
     depends_on:
       mongodb:
         condition: service_healthy
