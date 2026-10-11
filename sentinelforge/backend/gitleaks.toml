@@ -11,3 +11,16 @@ id = "generic-env-credential"
 description = "Generic credential-shaped assignment in a committed env/config file (KEY/SECRET/PASSWORD/TOKEN=value)"
 regex = '''(?i)[A-Z_]*(SECRET|PASSWORD|KEY|TOKEN)[A-Z_]*\s*=\s*[^\s#][^\n]{3,}'''
 tags = ["credential", "env-file"]
+# The regex alone is deliberately broad (no distinctive key shape to anchor on, since VULN-014's
+# whole point is a generic KEY=value assignment gitleaks' default rules don't catch). Without a
+# `path` restriction that broad regex also matches ordinary source code — any TS/JS variable
+# literally named token/key/secret/password assigned anything (`const token = getToken();`) has
+# the same shape. Restricting the rule to files that are actually env/config-shaped (.env* files,
+# docker-compose.yml) keeps it catching the real target while leaving source code, docs and
+# .env.example templates alone — more precise than suppressing those paths after the fact.
+path = '''(^|/)[^/]*\.env(\.[^/]+)?$|docker-compose\.ya?ml$'''
+
+[allowlist]
+paths = [
+  '''\.env\.example$''',
+]

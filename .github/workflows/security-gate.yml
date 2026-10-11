@@ -32,14 +32,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Scan backend dependencies
-        uses: google/osv-scanner-action/osv-scanner-action@v1
+        uses: google/osv-scanner-action/osv-scanner-action@v2.6.0
         with:
           scan-args: |-
             --lockfile=sentinelforge/backend/package-lock.json
             --fail-on-vuln=true
         continue-on-error: false
       - name: Scan frontend dependencies
-        uses: google/osv-scanner-action/osv-scanner-action@v1
+        uses: google/osv-scanner-action/osv-scanner-action@v2.6.0
         with:
           scan-args: |-
             --lockfile=sentinelforge/frontend/package-lock.json
@@ -64,7 +64,7 @@ jobs:
         working-directory: sentinelforge/backend
 
   frontend-typecheck:
-    name: Frontend — typecheck
+    name: Frontend — build (includes real typecheck)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -75,5 +75,9 @@ jobs:
           cache-dependency-path: sentinelforge/frontend/package-lock.json
       - run: npm ci
         working-directory: sentinelforge/frontend
-      - run: npx tsc --noEmit
+      # A bare `tsc --noEmit` misses Next.js's generated route types (e.g. LayoutProps), which only
+      # exist after a build; `next build` typechecks for real and is what the Dockerfile also runs.
+      - run: npm run build
         working-directory: sentinelforge/frontend
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:4000

@@ -31,7 +31,7 @@ async function triggerCanary(req: Request, res: Response, label: string, fakeBod
 
 router.get('/internal/db-backup.sql', (req, res) => {
   void triggerCanary(req, res, 'db-backup-download', {
-    filename: 'cyberlab_backup_2026-09-14.sql', size: 48213, downloadUrl: '/api/internal/db-backup.sql?token=expired',
+    filename: 'cyberlab_backup_2026-09-14.sql', size: 48213, downloadUrl: '/api/internal/db-backup.sql?token=expired', // gitleaks:allow — bait response text, not a real credential
   });
 });
 
