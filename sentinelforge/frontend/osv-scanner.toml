@@ -1,0 +1,8 @@
+# OSV-Scanner accepted-risk list. An entry here means: real finding, confirmed, deliberately not
+# blocking the gate — not "ignore everything." Each one documents why, and is dated so it gets
+# revisited rather than silently staying stale forever.
+
+[[IgnoredVulns]]
+id = "GHSA-vfj7-8cjw-p6xm"
+reason = "braces@3.0.3, pulled in transitively by eslint-config-next (lint tooling) via fast-glob -> micromatch. Dev-only dependency — never bundled into the built app, zero production/runtime exposure. No fixed version exists upstream yet. Re-check when eslint-config-next or micromatch publishes a fix."
+ignoreUntil = 2026-11-15

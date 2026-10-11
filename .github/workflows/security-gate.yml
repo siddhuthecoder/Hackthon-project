@@ -43,6 +43,7 @@ jobs:
         with:
           scan-args: |-
             --lockfile=sentinelforge/frontend/package-lock.json
+            --config=sentinelforge/frontend/osv-scanner.toml
 
   backend-quality-gate:
     name: Backend — typecheck + real unit tests
