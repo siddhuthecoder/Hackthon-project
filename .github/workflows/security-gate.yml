@@ -31,20 +31,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # osv-scanner's `scan source` already exits non-zero when it finds any real advisory match —
+      # no separate "fail on vuln" flag exists or is needed.
       - name: Scan backend dependencies
         uses: google/osv-scanner-action/osv-scanner-action@v2.6.0
         with:
           scan-args: |-
             --lockfile=sentinelforge/backend/package-lock.json
-            --fail-on-vuln=true
-        continue-on-error: false
       - name: Scan frontend dependencies
         uses: google/osv-scanner-action/osv-scanner-action@v2.6.0
         with:
           scan-args: |-
             --lockfile=sentinelforge/frontend/package-lock.json
-            --fail-on-vuln=true
-        continue-on-error: false
 
   backend-quality-gate:
     name: Backend — typecheck + real unit tests
