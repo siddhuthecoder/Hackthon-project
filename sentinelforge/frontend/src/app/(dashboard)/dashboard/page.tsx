@@ -56,7 +56,7 @@ export default function DashboardPage(): React.ReactElement {
     setLog([]);
     try {
       setLog(l => [...l, 'Registering CyberLab School SaaS…']);
-      const app = await api.post<Application>('/api/applications', { name: 'CyberLab School SaaS', baseUrl: 'http://localhost:3001' });
+      const app = await api.post<Application>('/api/applications', { name: 'CyberLab School SaaS', baseUrl: 'http://host.docker.internal:3001' });
       setLog(l => [...l, 'Discovering endpoints…']);
       const discovered = await api.post<{ endpointCount: number }>(`/api/applications/${app.id}/discover`);
       setLog(l => [...l, `Discovered ${discovered.endpointCount} endpoints. Running security scan…`]);

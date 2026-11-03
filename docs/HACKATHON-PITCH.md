@@ -6,7 +6,7 @@ AppSec teams find vulnerabilities. SOC teams watch for attacks. These are almost
 
 ## The idea
 
-SentinelForge connects the two. It finds a vulnerability once, through real scanning. Later, when live traffic matches the pattern of that exact vulnerability, it doesn't just flag "suspicious" — it says:
+SentinelForge connects the two, and goes further: it finds the weakness, proves it's exploitable with a real attack, detects that attack live, explains it, chains it into a realistic breach narrative, responds autonomously when the risk is high enough, fixes it, and verifies the fix — then writes the whole story down in a real ticket, a real postmortem, and a real alert.
 
 > *"This activity is consistent with exploitation of VULN-001."*
 
@@ -14,21 +14,41 @@ Then it closes the loop: it can apply a fix and replay the same attack to prove,
 
 ## What's real in this build (not a mockup)
 
-- **14 real vulnerability checks** against a live multi-tenant demo app (CyberLab), each one a genuine HTTP exploit attempt with captured evidence — not a canned finding list.
-- **A real attack**, triggered by a button, that generates real traffic against the real app.
-- **A real detection engine** (5 rules) evaluating real ingested events, with zero overlap between the scanner's own traffic and simulated attacker traffic (a genuine bug was found and fixed here — the scanner was briefly tripping its own alarms).
-- **A real correlation step** that only ever fires when a real detection rule matches a real, previously-confirmed finding on the same endpoint — never fabricated.
-- **A real attack graph**, built from that same data, rendered with React Flow.
-- **AI that explains, investigates, and recommends** — using only the real evidence in the database, with FACT/INFERENCE/UNCERTAINTY separated, and an honest offline fallback that's labeled as such rather than silently pretending to be a model.
-- **A real fix-and-verify loop**: flip CyberLab's own already-written secure route into place, replay the exact request that was vulnerable, and watch the status code change from 200 to 403 live.
-- **One command** (`npm run test:e2e`) that proves all 13 steps of this, end to end, from a clean reset, every time.
+**Scanning — 17 real checks, 3 real external tools, 2 live targets**
+- 14 purpose-built exploit checks against CyberLab (a live multi-tenant demo app) — IDOR, cross-tenant access, broken RBAC, NoSQL injection, stored XSS, SSRF, path traversal, mass assignment, business-logic/payment abuse, JWT role-trust, and more — each a genuine HTTP exploit attempt with captured evidence.
+- **Gitleaks** (real binary) for committed secrets, **Semgrep** (real binary, custom rule) for an SSRF source pattern, **OSV** (real API) for dependency CVEs — three real external security tools, not hand-rolled regexes.
+- A **systematic RBAC regression matrix**: logs in as every real non-admin role and attempts every admin-only action, not just the one known-broken endpoint.
+- A real **JWT algorithm-confusion probe** (`alg: none`) against the live API.
+- A **second, independent target** (OWASP Juice Shop) proving the adapter pattern is real, plus a **generic OpenAPI-driven adapter** that onboards any third-party REST API from its spec with zero new code.
 
-## The 3-minute demo
+**Detection & SOC**
+- A real detection engine (7 rules, including a **canary/deception endpoint** that fires a zero-false-positive critical alert on the first unauthorized touch) evaluating real ingested events.
+- A real correlation step that fires only when a real rule matches a real, previously-confirmed finding — including **retroactively**, if the attack happened before the scan did.
+- A real attack graph (React Flow) plus a **Security Digital Twin**: one standing graph of every application, open finding, and active incident org-wide, not just per-incident.
+- A **MITRE ATT&CK coverage heatmap** built from real detected techniques.
+- **SOC Copilot**: ask a plain-English question ("show me every failed login in the last 24 hours"), AI translates it into a safe structured query, runs it against real events, answers from the real results.
 
-Scan → 14 findings appear, including a HIGH BOLA. Click "Run IDOR Attack" in the Security Lab. Switch to the live SOC feed — real events stream in. An incident appears, already correlated to the known vulnerability. Click "Investigate with AI" — it names the vulnerability and shows the real evidence timeline. Open the attack graph. Go back to the finding, click Apply Fix, click Verify Fix — 200 becomes 403 on screen, in real time.
+**AI — 9 agents, real model, real audit trail**
+- Explains, investigates, and recommends using only real evidence, FACT/INFERENCE/UNCERTAINTY separated, with an honest offline fallback labeled as such.
+- **RedTeamAgent**: composes a real exploitation-chain narrative strictly from an application's actual open findings (never an invented vulnKey — filtered server-side even if the model tries).
+- Runs on a real model (OpenRouter, free tier) with every tool call persisted to an auditable `AgentRun` record.
+
+**Autonomous response**
+- **SOAR playbooks**: when a correlated finding's real risk score (severity + EPSS + KEV + exposure) crosses a threshold, the system opens a real Jira ticket and stages a block-IP action on its own — never auto-executing the destructive step, always one human approval away.
+- Real integrations: **Jira** tickets, **Confluence** postmortems (auto-+assembled from the real incident timeline), **Slack** alerts, **AbuseIPDB** IP reputation, **GitHub PRs** opened with AI-written patches.
+
+**Governance**
+- A real fix-and-verify loop for all 14 CyberLab vulnerabilities: flip the secure route into place, replay the exact request, watch 200 become 403 live.
+- Risk-ranked fix queue, OWASP Top-10 compliance coverage view, multi-target posture comparison, scheduled re-scan with **regression detection** (we deliberately broke a fix behind the platform's back — it caught it within one scan cycle), SARIF/JSON export.
+- A real **GitHub Actions security gate** on the project's own repo — Gitleaks, OSV, and a real build/typecheck on every PR. It has already caught three real issues on itself.
+- **26 unit tests**, a 13-step live end-to-end script, and a 14-probe **cross-org isolation self-test** — which found and fixed a real IDOR in SentinelForge itself before anyone else could.
+
+## The demo: Attack Theater
+
+One button runs the entire loop live, no manual clicking between steps: connect target → discover → scan → launch a real attack → SOC detects it → AI investigates → attack graph renders → autonomous red-team chain analysis → locate the finding → apply the fix → verify it (200 → 403) → revert for repeatability. Every step is a real API call against the live stack, narrated as it happens.
 
 ## Honest limitations
 
-AI runs in real model mode (a free OpenRouter model) in this build, with an automatic, honest offline fallback if a call fails — either way, output is grounded in real data, never fabricated, and clearly labeled which mode produced it. All 14 vulnerabilities now have a one-click verify probe, including the secret-in-committed-config one, which runs a real Gitleaks scan over HTTP rather than a route re-check. No unit test suite — the one automated check is a full live end-to-end run, which is arguably a higher bar to pass than mocked unit tests, but it isn't a substitute for one. The stack runs MongoDB instead of the spec's named PostgreSQL+Redis, and the AI agent architecture (8 named agents, 13 named tools, an orchestrator, a full persisted tool-call audit trail) is implemented without the specific LangGraph library underneath — the pattern is real, the dependency isn't. Of the spec's named AppSec tools, only Gitleaks was integrated (for the one vuln class it's actually built for); the other 13 vulnerabilities are purpose-built exploit checks, since generic SAST/DAST tools don't meaningfully catch business-logic or auth-bypass bugs like these without extensive custom rules of their own.
+MongoDB, not the spec's named PostgreSQL+Redis — a deliberate, confirmed choice, functionally equivalent. The 9-agent architecture (agents, named tools, orchestrator, persisted audit trail) is real but doesn't sit on the LangGraph library specifically. Three real external tools are integrated (Gitleaks, Semgrep, OSV) rather than the full Semgrep/ZAP/Nuclei/Trivy/OSV set — no cloud or container image scanning, since there's no real cloud account or Docker-socket access to scan honestly rather than fabricate results. The free-tier AI model is noticeably slower than a paid one and occasionally falls back to offline mode mid-demo — always labeled, never hidden.
 
 See `docs/IMPLEMENTATION-STATUS.md` for the complete, unvarnished account of what was built, what was verified live, and what wasn't finished.
